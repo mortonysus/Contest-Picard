@@ -13,6 +13,7 @@ def make_folders(config):
 def output_test(cfg, test_n, equation):
     with open(os.path.join(cfg["tests_path"], f"test{test_n}.test"), 'w') as ost:
         ost.write(f"{equation}\n")
+        ost.write(f"{cfg['approximation_count']}\n")
         ost.write(f"{cfg['t0']} {equation.y.subs('t', cfg['t0']).evalf()}")
 
 
@@ -47,13 +48,14 @@ def valid_equation(cfg):
 test_configs = [
     {
         "count": 1,
-        "depth": 2,
-        "t0": 0,
+        "depth": 0,
+        "t0": 1,
         "tn": 20,
         "points": 101,
         "max_value": 10 ** 6,
         "tests_path": "tests",
         "answers_path": os.path.join("tests", "answers"),
+        "approximation_count": 5
     }
 ]
 

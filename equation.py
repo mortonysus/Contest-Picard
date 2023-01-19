@@ -14,5 +14,4 @@ class Equation:
             raise Exception("bad generation")
 
     def __str__(self):
-        y = smp.Symbol('y')
         return f"y' = {smp.simplify(self.ft * self.hy + self.gt)}"

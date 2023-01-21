@@ -1,0 +1,81 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={170mm,257mm},
+ left=20mm,
+ top=20mm,
+ }
+ \usepackage{graphicx}
+ \usepackage{titling}
+
+ \title{Pikard}
+\author{Egor Zubkov, Ivan Palchenkov}
+\date{January 2023}
+ 
+ \usepackage{fancyhdr}
+\fancypagestyle{plain}{%  the preset of fancyhdr 
+    \fancyhf{} % clear all header and footer fields
+    \fancyfoot[L]{\thedate}
+    \fancyhead[L]{Pikard problem}
+    \fancyhead[R]{\theauthor}
+}
+\makeatletter
+\def\@maketitle{%
+  \newpage
+  \null
+  \vskip 1em%
+  \begin{center}%
+  \let \footnote \thanks
+    {\LARGE \@title \par}%
+    \vskip 1em%
+    %{\large \@date}%
+  \end{center}%
+  \par
+  \vskip 1em}
+\makeatother
+
+\usepackage{lipsum}  
+\usepackage{cmbright}
+
+\begin{document}
+
+\maketitle
+
+\noindent\begin{tabular}{@{}ll}
+    Team: \theauthor\\
+    Time limit: X seconds\\
+    Memory limit: 256mb
+\end{tabular}
+
+\section*{Problem}
+You are given a first-order differential equation of the form $y' = f(t,y)$. Your task is to find the value of its kth approximation $y_k$ at the specified point
+
+\section*{Input}
+The first line of the input contains a differential equation in the format $y' = f(t,y)$. The equation can contain $sin, cos, exp$ and degree functions (sympy format).\\\\
+The second line contains an integer $1 <= k <= 10$ - the iteration number for which you need to find the approximation value at the point.\\\\
+The third line contains two computable expressions $t_0$ and $y_0$ (sympy format) - the initial condition for solving the Cauchy problem. \\\\
+The fourth line contains a computable expression $t_k$ (sympy format) - the point where you need to find the value of the kth approximation. \\\\
+It is guaranteed that it is possible to find Picard approximations for a given differential equation in elementary functions.
+
+\section*{Output}
+The only real number $x = y_k(t_k), -10^{12} <= x <= 10^{12}$. The answer will be correct with an error of no more than 8 decimal places
+\section*{Samples}
+\begin{tabular}{p{8cm}||p{8cm}}
+ \hline
+ picard.in & picard.out\\
+ \hline\hline
+ $y' = t**3 + 5*y*sin(2*t)$ & 7125.421055131611 \\
+ 5 \\
+ pi 1 \\
+ 3*pi \\
+ \hline
+ $y' = t*y*(216*t**2 - 1) + 3*exp(8*t)$ & -694570194783.7665 \\
+ 3 \\
+ 2 5 \\
+ 1 \\
+ \hline
+\end{tabular}
+
+\end{document}

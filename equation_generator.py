@@ -1,5 +1,5 @@
 import numpy as np
-import equation as eq
+import Equation as eq
 import sympy as smp
 
 
@@ -30,8 +30,8 @@ def rnd_expr(depth, sym):
         return sym
 
     if true_with_chance(0.5):
-        return rnd_op((rnd_func())(sym), rnd_expr(depth - 1, sym))
-    return rnd_func()(sym)
+        return rnd_op((rnd_func())(sym * np.random.randint(1, 10)), rnd_expr(depth - 1, sym))
+    return rnd_func()(sym * np.random.randint(1, 10)) * np.random.randint(1, 10)
 
 
 # Генерация случайного дифференциального уравнения первого порядка

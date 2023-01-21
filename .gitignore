@@ -50,3 +50,5 @@ wheels/
 .installed.cfg
 *.egg
 tests/*
+picard.in
+picard.out

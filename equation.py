@@ -1,17 +1,14 @@
 import sympy as smp
 
 
-# ODE in format: y' = f(t)*h(y) + g(t)
+# ODE in format: y' = f(t)*y + g(t)
 class Equation:
-    def __init__(self, y, ft, hy, gt):
-        self.ft = ft
-        self.gt = gt
-        self.hy = hy
-        self.y = y
-        # Подставляем и проверяем что все сошлось.
-        substitute = (self.ft * self.hy + self.gt).subs('y', y) - smp.diff(y, 't')
-        if not substitute.equals(smp.sin(0)):
-            raise Exception("bad generation")
+    def __init__(self, f, g):
+        self.f = f
+        self.g = g
+
+    def right_part(self):
+        return smp.simplify(self.f * smp.Symbol('y') + self.g)
 
     def __str__(self):
-        return f"y' = {smp.simplify(self.ft * self.hy + self.gt)}"
+        return f"y' = {self.right_part()}"

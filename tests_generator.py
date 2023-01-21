@@ -1,6 +1,9 @@
 import os
 import numpy as np
 import equation_generator as eg
+import sympy as smp
+import solver as slv
+import asyncio
 
 
 def make_folders(config):
@@ -13,56 +16,70 @@ def make_folders(config):
 def output_test(cfg, test_n, equation):
     with open(os.path.join(cfg["tests_path"], f"test{test_n}.test"), 'w') as ost:
         ost.write(f"{equation}\n")
-        ost.write(f"{cfg['approximation_count']}\n")
-        ost.write(f"{cfg['t0']} {equation.y.subs('t', cfg['t0']).evalf()}")
+        ost.write(f"{cfg['iters']}\n")
+        ost.write(f"{cfg['t0']} {cfg['y0']}\n")
+        ost.write(f"{cfg['tk']}")
 
 
-def output_answer(cfg, test_n, equation):
+def output_answer(cfg, test_n, answer):
     with open(os.path.join(cfg["answers_path"], f"test{test_n}.answer"), 'w') as ost:
-        ost.write(f"y = {equation.y} \n")
-        ost.write(f"{equation}\n")
-        ost.write(f"{cfg['t0']} {equation.y.subs('t', cfg['t0']).evalf()}")
+        ost.write(f"{answer}\n")
 
 
-# Проверка вычислимости функции на диапазоне и соответствия ограничению на значения.
-def valid_function(cfg, y):
-    try:
-        for t in np.linspace(cfg['t0'], cfg['tn'], cfg['points']):
-            if float(y.subs('t', t)) > cfg['max_value']:
-                return False
-        return True
-    except:
-        return False
-
-
-# Вернет уравнение, решение которого вычислимо на диапазоне.
-def valid_equation(cfg):
-    equation = eg.gen(cfg['depth'])
-    while not valid_function(cfg, equation.y):
-        equation = eg.gen(cfg['depth'])
-
-    return equation
-
-
-# В дальнейшем будет в отдельном файле.
-test_configs = [
+configs = [
     {
-        "count": 1,
-        "depth": 0,
-        "t0": 1,
-        "tn": 20,
-        "points": 101,
-        "max_value": 10 ** 6,
+        "count": 2,
+        "depth": 4,
+        "t0": smp.pi,
+        "y0": smp.Rational(1),
+        "tk": smp.pi * 3,
+        "iters": 5,
         "tests_path": "tests",
-        "answers_path": os.path.join("tests", "answers"),
-        "approximation_count": 5
+        "answers_path": os.path.join("tests", "answers")
+    },
+    {
+        "count": 2,
+        "depth": 1,
+        "t0": smp.pi,
+        "y0": smp.Rational(1),
+        "tk": smp.pi * 3,
+        "iters": 3,
+        "tests_path": "tests",
+        "answers_path": os.path.join("tests", "answers")
     }
 ]
 
+
+def gen_equation(cfg):
+    return eg.gen(cfg["depth"])
+
+
+async def gen(cfg, test_n):
+    equation = gen_equation(cfg)
+    picard = slv.picard(cfg["iters"], equation.right_part(), cfg["t0"],
+                        cfg["y0"])
+
+    answer = picard.subs('t', cfg["tk"]).evalf()
+    output_test(cfg, test_n, equation)
+    output_answer(cfg, test_n, answer)
+
+    print(f"{test_n + 1})")
+    print(f"\tEquation: {equation}")
+    print(f"\ty({cfg['t0']}) = {cfg['t0']}")
+    print(f"\tIterations: {cfg['iters']}")
+    print(f"\ty_{cfg['iters']} = {picard}")
+    print(f"\ty_{cfg['iters']}({cfg['tk']}) = {answer}")
+
+
+async def main():
+    print(f"Generating ({len(configs)}) sets of tests.")
+    for cfg in range(len(configs)):
+        print(f"\nTest set #{cfg + 1}")
+        make_folders(configs[cfg])
+        for k in range(0, configs[cfg]["count"]):
+            async with asyncio.timeout(1):
+                await gen(configs[cfg], k)
+
+
 if __name__ == '__main__':
-    for cfg in test_configs:
-        make_folders(cfg)
-        for test_n in range(0, cfg["count"]):
-            equation = valid_equation(cfg)
-            output_test(cfg, test_n, equation)
-            output_answer(cfg, test_n, equation)
+    asyncio.run(main())

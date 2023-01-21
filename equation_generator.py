@@ -10,17 +10,17 @@ def true_with_chance(chance):
 
 # Возвращает результат применения случайного бинарного оператора.
 def rnd_op(a, b):
-    return np.random.choice([a + b, a - b, a * b, a / b, a ** b])
+    return np.random.choice([a + b, a - b, a * b])
 
 
-# Возвращает случайную тригонометрическую функцию (как насчет гаверсинуса?).
-def rnd_trig_func():
-    return np.random.choice([smp.sin, smp.cos, smp.tan, smp.cot])
+# Возвращает выражение возведенное в случайную степень от 2 до 5
+def power(expr):
+    return expr ** np.random.randint(2, 5)
 
 
 # Возвращает случайную алгебраическую функцию.
 def rnd_func():
-    return np.random.choice([rnd_trig_func(), smp.sqrt, smp.exp, smp.log, smp.cbrt])
+    return np.random.choice([smp.sin, smp.cos, smp.exp, power])
 
 
 # Генерирует выражение зависящее от t.
@@ -28,36 +28,17 @@ def rnd_func():
 def rnd_expr(depth, sym):
     if depth <= 0:
         return sym
-    # Выбираем:
-    #   Добавить слагаемое / множитель
-    #   Увеличить вложенность
-    #   Добавить и увеличить
-    #   Ничего не делать
-    # Теоретически это даст возможность получить любые комбинации выражений с глубиной вложенности не больше заданной
-    dive = true_with_chance(0.5)
-    operator = true_with_chance(0.5)
 
-    # Возможно это все достаточно неприлично.
-    if dive and not operator:
-        return (rnd_func())(rnd_expr(depth - 1, sym))
-    if not dive and operator:
+    if true_with_chance(0.5):
         return rnd_op((rnd_func())(sym), rnd_expr(depth - 1, sym))
-    if dive and operator:
-        return rnd_op((rnd_func())(rnd_expr(depth - 1, sym)), rnd_expr(depth - 1, sym))
-    if not operator and not dive:
-        return rnd_func()(sym)
-
-
-# Составление уравнения по частному решению и переменным коэффициентам
-def make_from_y(y, hy, gt):
-    dy = smp.simplify(smp.diff(y))
-    ft = smp.simplify((dy - gt) / hy.subs('y', y))
-    return eq.Equation(y, ft, hy, gt)
+    return rnd_func()(sym)
 
 
 # Генерация случайного дифференциального уравнения первого порядка
 def gen(depth):
-    y = smp.simplify(rnd_expr(depth, smp.Symbol('t')))
-    hy = smp.simplify(rnd_expr(depth, smp.Symbol('y')))
-    gt = smp.simplify(rnd_expr(depth, smp.Symbol('t')))
-    return make_from_y(y, hy, gt)
+    t = smp.Symbol('t')
+    return eq.Equation(rnd_expr(depth, t), rnd_expr(depth, t))
+
+
+if __name__ == '__main__':
+    print(gen(1))

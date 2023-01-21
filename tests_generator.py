@@ -3,7 +3,7 @@ import numpy as np
 import equation_generator as eg
 import sympy as smp
 import solver as slv
-import asyncio
+import multiprocessing
 
 
 def make_folders(config):
@@ -29,13 +29,14 @@ def output_answer(cfg, test_n, answer):
 configs = [
     {
         "count": 2,
-        "depth": 4,
+        "depth": 2,
         "t0": smp.pi,
         "y0": smp.Rational(1),
         "tk": smp.pi * 3,
         "iters": 5,
         "tests_path": "tests",
-        "answers_path": os.path.join("tests", "answers")
+        "answers_path": os.path.join("tests", "answers"),
+        "timeout": 5
     },
     {
         "count": 2,
@@ -45,17 +46,14 @@ configs = [
         "tk": smp.pi * 3,
         "iters": 3,
         "tests_path": "tests",
-        "answers_path": os.path.join("tests", "answers")
+        "answers_path": os.path.join("tests", "answers"),
+        "timeout": 3
     }
 ]
 
 
-def gen_equation(cfg):
-    return eg.gen(cfg["depth"])
-
-
-async def gen(cfg, test_n):
-    equation = gen_equation(cfg)
+def gen(cfg, test_n):
+    equation = eg.gen(cfg["depth"])
     picard = slv.picard(cfg["iters"], equation.right_part(), cfg["t0"],
                         cfg["y0"])
 
@@ -71,15 +69,20 @@ async def gen(cfg, test_n):
     print(f"\ty_{cfg['iters']}({cfg['tk']}) = {answer}")
 
 
-async def main():
+if __name__ == '__main__':
     print(f"Generating ({len(configs)}) sets of tests.")
     for cfg in range(len(configs)):
         print(f"\nTest set #{cfg + 1}")
         make_folders(configs[cfg])
-        for k in range(0, configs[cfg]["count"]):
-            async with asyncio.timeout(1):
-                await gen(configs[cfg], k)
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
+        k = 0
+        while True:
+            p = multiprocessing.Process(target=gen, args=(configs[cfg], k))
+            p.start()
+            p.join(timeout=configs[cfg]['timeout'])
+            if p.is_alive():
+                print("Too long generation, regenerating equation...")
+                p.terminate()
+                continue
+            k += 1
+            if k == configs[cfg]["count"]:
+                break

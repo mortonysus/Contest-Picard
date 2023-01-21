@@ -27,7 +27,7 @@ def output_test(cfg, set_n, test_n, equation):
 
 def output_answer(set_n, test_n, answer):
     with open(os.path.join("tests", f"set{set_n}", "answers", f"test{test_n}.answer"), 'w') as ost:
-        ost.write(f"{answer}\n")
+        ost.write('%.10f' % answer)
 
 
 def gen_test(cfg, set_n, test_n):
@@ -42,7 +42,7 @@ def gen_test(cfg, set_n, test_n):
     output_test(cfg, set_n, test_n, equation)
     output_answer(set_n, test_n, answer)
 
-    print(f"{test_n + 1})")
+    print(f"{test_n})")
     print(f"\tEquation: {equation}")
     print(f"\ty({cfg['t0']}) = {cfg['t0']}")
     print(f"\tIterations: {cfg['iters']}")
@@ -51,20 +51,20 @@ def gen_test(cfg, set_n, test_n):
 
 
 def gen_test_wrapper(test_n, set_n):
-    gen = Process(target=gen_test, args=(configs[set_n], set_n, test_n))
+    gen = Process(target=gen_test, args=(configs[set_n - 1], set_n, test_n))
     gen.start()
-    gen.join(timeout=configs[set_n]['timeout'])
+    gen.join(timeout=configs[set_n-1]['timeout'])
     if gen.exception:
         raise Exception(gen.exception[0])
     if gen.is_alive():
         gen.terminate()
-        raise Exception("Too long generation, regenerating equation...")
+        raise Exception("Too long generation, regenerating...")
 
 
 def gen_set(set_n):
     make_folders(set_n)
-    test_n = 0
-    while test_n != configs[set_n]["count"]:
+    test_n = 1
+    while test_n != configs[set_n - 1]["count"] + 1:
         try:
             gen_test_wrapper(test_n, set_n)
         except Exception as e:
@@ -75,6 +75,6 @@ def gen_set(set_n):
 
 if __name__ == '__main__':
     print(f"Generating ({len(configs)}) sets of tests.")
-    for set_n in range(len(configs)):
-        print(f"\nTest set #{set_n + 1}")
+    for set_n in range(1, len(configs) + 1):
+        print(f"\nTest set #{set_n}")
         gen_set(set_n)

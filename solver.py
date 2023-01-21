@@ -17,7 +17,7 @@ def picard(k, f_yt, t0, y0):
 
 
 if __name__ == '__main__':
-    debug = True
+    #debug = True
     with open("picard.in", 'r') as ist:
         equation = ist.readline()
         k = int(ist.readline())
@@ -32,4 +32,5 @@ if __name__ == '__main__':
 
         yk = picard(k, y_expr, t0, y0)
         with open("picard.out", 'w') as ost:
-            ost.write(str(yk.subs('t', tk).evalf()))
+            answer = yk.subs('t', tk).evalf()
+            ost.write('%.10f' % answer)

@@ -1,65 +1,45 @@
 import os
-import numpy as np
 import equation_generator as eg
-import sympy as smp
 import solver as slv
 import multiprocessing
+from configs import *
+from Process import *
 
 
-def make_folders(config):
-    if not os.path.exists(config["tests_path"]):
-        os.makedirs(config["tests_path"])
-    if not os.path.exists(config["answers_path"]):
-        os.makedirs(config["answers_path"])
+def make_folders(set_n):
+    general_path = "tests"
+    if not os.path.exists(general_path):
+        os.makedirs(general_path)
+    if not os.path.exists(os.path.join(general_path, f"set{set_n}", "tests")):
+        os.makedirs(os.path.join(general_path, f"set{set_n}", "tests"))
+    if not os.path.exists(os.path.join(general_path, f"set{set_n}", "answers")):
+        os.makedirs(os.path.join(general_path, f"set{set_n}", "answers"))
 
 
-def output_test(cfg, test_n, equation):
-    with open(os.path.join(cfg["tests_path"], f"test{test_n}.test"), 'w') as ost:
+def output_test(cfg, set_n, test_n, equation):
+    with open(os.path.join("tests", f"set{set_n}", "tests", f"test{test_n}.test"), 'w') as ost:
         ost.write(f"{equation}\n")
         ost.write(f"{cfg['iters']}\n")
         ost.write(f"{cfg['t0']} {cfg['y0']}\n")
         ost.write(f"{cfg['tk']}")
 
 
-def output_answer(cfg, test_n, answer):
-    with open(os.path.join(cfg["answers_path"], f"test{test_n}.answer"), 'w') as ost:
+def output_answer(set_n, test_n, answer):
+    with open(os.path.join("tests", f"set{set_n}", "answers", f"test{test_n}.answer"), 'w') as ost:
         ost.write(f"{answer}\n")
 
 
-configs = [
-    {
-        "count": 2,
-        "depth": 2,
-        "t0": smp.pi,
-        "y0": smp.Rational(1),
-        "tk": smp.pi * 3,
-        "iters": 5,
-        "tests_path": "tests",
-        "answers_path": os.path.join("tests", "answers"),
-        "timeout": 5
-    },
-    {
-        "count": 2,
-        "depth": 1,
-        "t0": smp.pi,
-        "y0": smp.Rational(1),
-        "tk": smp.pi * 3,
-        "iters": 3,
-        "tests_path": "tests",
-        "answers_path": os.path.join("tests", "answers"),
-        "timeout": 3
-    }
-]
-
-
-def gen(cfg, test_n):
+def gen(cfg, set_n, test_n):
     equation = eg.gen(cfg["depth"])
     picard = slv.picard(cfg["iters"], equation.right_part(), cfg["t0"],
                         cfg["y0"])
 
-    answer = picard.subs('t', cfg["tk"]).evalf()
-    output_test(cfg, test_n, equation)
-    output_answer(cfg, test_n, answer)
+    answer = float(picard.subs('t', cfg["tk"]).evalf())  # conversion exception
+    if abs(answer) > cfg["max"]:
+        raise Exception(f"Too big answer value, regenerating equation...")
+
+    output_test(cfg, set_n, test_n, equation)
+    output_answer(set_n, test_n, answer)
 
     print(f"{test_n + 1})")
     print(f"\tEquation: {equation}")
@@ -71,18 +51,23 @@ def gen(cfg, test_n):
 
 if __name__ == '__main__':
     print(f"Generating ({len(configs)}) sets of tests.")
-    for cfg in range(len(configs)):
-        print(f"\nTest set #{cfg + 1}")
-        make_folders(configs[cfg])
-        k = 0
+    for set_n in range(len(configs)):
+        print(f"\nTest set #{set_n + 1}")
+        make_folders(set_n)
+        test_n = 0
         while True:
-            p = multiprocessing.Process(target=gen, args=(configs[cfg], k))
-            p.start()
-            p.join(timeout=configs[cfg]['timeout'])
-            if p.is_alive():
-                print("Too long generation, regenerating equation...")
-                p.terminate()
+            try:
+                generation = Process(target=gen, args=(configs[set_n], set_n, test_n))
+                generation.start()
+                generation.join(timeout=configs[set_n]['timeout'])
+                if generation.exception:
+                    raise Exception(generation.exception[0])
+                if generation.is_alive():
+                    generation.terminate()
+                    raise Exception("Too long generation, regenerating equation...")
+            except Exception as e:
+                print(e)
                 continue
-            k += 1
-            if k == configs[cfg]["count"]:
+            test_n += 1
+            if test_n == configs[set_n]["count"]:
                 break
